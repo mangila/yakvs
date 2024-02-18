@@ -35,71 +35,58 @@ public class SessionHandler {
                        Selector selector,
                        SelectionKey selectionKey,
                        SSLContext sslContext) {
-        try {
-            SocketChannel channel = server.accept();
-            channel.configureBlocking(Boolean.FALSE);
-            var tlsChannel = ServerTlsChannel.newBuilder(channel, sslContext)
-                    .withPlainBufferAllocator(new HeapBufferAllocator())
-                    .withEncryptedBufferAllocator(new DirectBufferAllocator())
-                    .build();
-            var session = Session.builder()
-                    .readBuffer(ByteBuffer.allocate(bufferSize))
-                    .tlsChannel(tlsChannel)
-                    .build();
-            channel.register(selector, SelectionKey.OP_READ, session);
-        } catch (IOException e) {
-            close(selectionKey);
-        }
+//        try {
+//            SocketChannel channel = server.accept();
+//            channel.configureBlocking(Boolean.FALSE);
+//            var tlsChannel = ServerTlsChannel.newBuilder(channel, sslContext)
+//                    .withPlainBufferAllocator(new HeapBufferAllocator())
+//                    .withEncryptedBufferAllocator(new DirectBufferAllocator())
+//                    .build();
+//            var session = Session.builder()
+//                    .readBuffer(ByteBuffer.allocate(bufferSize))
+//                    .tlsChannel(tlsChannel)
+//                    .build();
+//            channel.register(selector, SelectionKey.OP_READ, session);
+//        } catch (IOException e) {
+//            close(selectionKey);
+//        }
     }
 
     public void accept(ServerSocketChannel server,
-                       Selector selector,
-                       SelectionKey selectionKey) {
-        try {
-            SocketChannel channel = server.accept();
-            channel.configureBlocking(Boolean.FALSE);
-            var session = Session.builder()
-                    .readBuffer(ByteBuffer.allocate(bufferSize))
-                    .build();
-            channel.register(selector, SelectionKey.OP_READ, session);
-        } catch (IOException e) {
-            close(selectionKey);
-        }
+                       Selector selector) throws IOException {
+        SocketChannel channel = server.accept();
+        channel.configureBlocking(Boolean.FALSE);
+        var session = Session.builder()
+                .readBuffer(ByteBuffer.allocate(bufferSize))
+                .build();
+        channel.register(selector, SelectionKey.OP_READ, session);
     }
 
-    public void read(SelectionKey selectionKey) {
-        try {
-            var channel = (SocketChannel) selectionKey.channel();
-            var session = (Session) selectionKey.attachment();
-            var readBuffer = session.getReadBuffer().clear();
-            int bytes = channel.read(readBuffer);
-            if (bytes == -1) {
-                throw new EndOfStreamException();
-            }
-            String request = new String(readBuffer.array(), 0, bytes, StandardCharsets.UTF_8);
-            if (request.equals(POISON_PILL)) {
-                throw new EndOfStreamException();
-            }
-            Optional<Query> query = parser.parse(request);
-            String value = query.map(engine::execute)
-                    .orElseGet(() -> String.format(ERROR_MESSAGE, request));
-            session.setWriteBuffer(ByteBuffer.wrap(value.getBytes()));
-            selectionKey.interestOps(SelectionKey.OP_WRITE);
-        } catch (IOException | EndOfStreamException e) {
-            close(selectionKey);
+    public void read(SelectionKey selectionKey) throws IOException {
+        var channel = (SocketChannel) selectionKey.channel();
+        var session = (Session) selectionKey.attachment();
+        var readBuffer = session.getReadBuffer().clear();
+        int bytes = channel.read(readBuffer);
+        if (bytes == -1) {
+            throw new EndOfStreamException();
         }
+        String request = new String(readBuffer.array(), 0, bytes, StandardCharsets.UTF_8);
+        if (request.equals(POISON_PILL)) {
+            throw new EndOfStreamException();
+        }
+        Optional<Query> query = parser.parse(request);
+        String value = query.map(engine::execute)
+                .orElseGet(() -> String.format(ERROR_MESSAGE, request));
+        session.setWriteBuffer(ByteBuffer.wrap(value.getBytes()));
+        selectionKey.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void write(SelectionKey selectionKey) {
+    public void write(SelectionKey selectionKey) throws IOException {
         var channel = (SocketChannel) selectionKey.channel();
         var session = (Session) selectionKey.attachment();
         var buffer = session.getWriteBuffer();
         while (buffer.hasRemaining()) {
-            try {
-                channel.write(buffer);
-            } catch (IOException e) {
-                close(selectionKey);
-            }
+            channel.write(buffer);
         }
         selectionKey.interestOps(SelectionKey.OP_READ);
     }
@@ -132,13 +119,8 @@ public class SessionHandler {
 
     }
 
-    private void close(SelectionKey selectionKey) {
-        try {
-            selectionKey.channel().close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            selectionKey.cancel();
-        }
+    private void close(SelectionKey selectionKey) throws IOException {
+        selectionKey.cancel();
+        selectionKey.channel().close();
     }
 }

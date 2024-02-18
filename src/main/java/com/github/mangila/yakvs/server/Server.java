@@ -1,9 +1,9 @@
 package com.github.mangila.yakvs.server;
 
 import com.github.mangila.yakvs.engine.Engine;
+import com.github.mangila.yakvs.engine.Parser;
 import com.github.mangila.yakvs.engine.storage.FileStorage;
 import com.github.mangila.yakvs.engine.storage.InMemoryStorage;
-import com.github.mangila.yakvs.engine.Parser;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -11,7 +11,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
-import java.util.concurrent.TimeUnit;
 
 public class Server {
     private final int port;
@@ -29,7 +28,7 @@ public class Server {
             server.register(selector, SelectionKey.OP_ACCEPT);
             server.bind(new InetSocketAddress(port));
             while (selector.isOpen() && server.isOpen()) {
-                selector.select(selectionKey -> {
+                selector.selectNow(selectionKey -> {
                     if (selectionKey.isValid() && selectionKey.isAcceptable()) {
                         sessionHandler.accept(server, selector, selectionKey, sslContext);
                     }
@@ -39,7 +38,7 @@ public class Server {
                     if (selectionKey.isValid() && selectionKey.isWritable()) {
                         sessionHandler.writeTls(selectionKey);
                     }
-                }, TimeUnit.MILLISECONDS.toSeconds(30));
+                });
             }
         }
     }
@@ -51,17 +50,22 @@ public class Server {
             server.register(selector, SelectionKey.OP_ACCEPT);
             server.bind(new InetSocketAddress(port));
             while (selector.isOpen() && server.isOpen()) {
-                selector.select(selectionKey -> {
-                    if (selectionKey.isValid() && selectionKey.isAcceptable()) {
-                        sessionHandler.accept(server, selector, selectionKey);
+                selector.selectNow(selectionKey -> {
+                    try {
+                        if (selectionKey.isValid() && selectionKey.isAcceptable()) {
+                            sessionHandler.accept(server, selector);
+                        }
+                        if (selectionKey.isValid() && selectionKey.isReadable()) {
+                            sessionHandler.read(selectionKey);
+                        }
+                        if (selectionKey.isValid() && selectionKey.isWritable()) {
+                            sessionHandler.write(selectionKey);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        selectionKey.cancel();
                     }
-                    if (selectionKey.isValid() && selectionKey.isReadable()) {
-                        sessionHandler.read(selectionKey);
-                    }
-                    if (selectionKey.isValid() && selectionKey.isWritable()) {
-                        sessionHandler.write(selectionKey);
-                    }
-                }, TimeUnit.MILLISECONDS.toSeconds(90));
+                });
             }
         }
     }

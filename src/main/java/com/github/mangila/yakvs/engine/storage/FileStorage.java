@@ -9,13 +9,13 @@ import java.util.Collection;
 
 public class FileStorage implements Storage {
 
-    private static final Path STORAGE_DIRECTORY = Paths.get("data");
+    private static final Path FILE_STORAGE_DIRECTORY = Paths.get("data");
     private static final String FILE_EXTENSION = ".binpb";
 
     static {
         try {
-            if (!Files.isDirectory(STORAGE_DIRECTORY)) {
-                Files.createDirectory(STORAGE_DIRECTORY);
+            if (!Files.isDirectory(FILE_STORAGE_DIRECTORY)) {
+                Files.createDirectory(FILE_STORAGE_DIRECTORY);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -25,7 +25,7 @@ public class FileStorage implements Storage {
     @Override
     public String get(Query query) {
         var key = query.key().key();
-        var entry = get(STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION));
+        var entry = get(FILE_STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION));
         return entry.getValue();
     }
 
@@ -48,7 +48,7 @@ public class FileStorage implements Storage {
 
     private String set(Entry entry) {
         try {
-            var path = STORAGE_DIRECTORY.resolve(entry.getKey() + FILE_EXTENSION);
+            var path = FILE_STORAGE_DIRECTORY.resolve(entry.getKey() + FILE_EXTENSION);
             com.google.common.io.Files.write(entry.toByteArray(), path.toFile());
         } catch (IOException e) {
             return "FAILED TO WRITE";
@@ -59,7 +59,7 @@ public class FileStorage implements Storage {
     @Override
     public String delete(Query query) {
         var key = query.key().key();
-        return delete(STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION)) ? "OK" : "ERROR";
+        return delete(FILE_STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION)) ? "OK" : "ERROR";
     }
 
     private boolean delete(Path path) {
@@ -72,7 +72,7 @@ public class FileStorage implements Storage {
 
     @Override
     public String count() {
-        try (var stream = Files.walk(STORAGE_DIRECTORY)) {
+        try (var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
             return String.valueOf(stream.count());
         } catch (IOException e) {
             return "ERROR";
@@ -81,7 +81,7 @@ public class FileStorage implements Storage {
 
     @Override
     public String dump() {
-        try (var writer = Files.newBufferedWriter(Paths.get("dump.csv"), StandardOpenOption.CREATE, StandardOpenOption.WRITE); var stream = Files.walk(STORAGE_DIRECTORY)) {
+        try (var writer = Files.newBufferedWriter(Paths.get("dump.csv"), StandardOpenOption.CREATE, StandardOpenOption.WRITE); var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
             writer.write("KEY,VALUE");
             writer.newLine();
             stream.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)).forEach(path -> {
@@ -101,7 +101,7 @@ public class FileStorage implements Storage {
 
     @Override
     public String flush() {
-        try (var stream = Files.walk(STORAGE_DIRECTORY)) {
+        try (var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
             stream.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)).forEach(path -> {
                 try {
                     Files.deleteIfExists(path);
