@@ -1,16 +1,26 @@
 package com.github.mangila.yakvs.engine.storage;
 
 import com.github.mangila.proto.Entry;
+import com.github.mangila.yakvs.engine.Key;
+import com.github.mangila.yakvs.engine.Value;
 import com.github.mangila.yakvs.engine.query.Query;
+import com.google.common.primitives.Longs;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.Collection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 
+import static com.github.mangila.yakvs.engine.storage.StorageUtil.ERR;
+import static com.github.mangila.yakvs.engine.storage.StorageUtil.OK;
+
+@Slf4j
 public class FileStorage implements Storage {
 
-    private static final Path FILE_STORAGE_DIRECTORY = Paths.get("data");
-    private static final String FILE_EXTENSION = ".binpb";
+    public static final Path FILE_STORAGE_DIRECTORY = Paths.get("data");
+    public static final String FILE_EXTENSION_BINPB = ".binpb";
 
     static {
         try {
@@ -18,73 +28,80 @@ public class FileStorage implements Storage {
                 Files.createDirectory(FILE_STORAGE_DIRECTORY);
             }
         } catch (IOException e) {
+            log.error(ERR, e);
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public String get(Query query) {
-        var key = query.key().key();
-        var entry = get(FILE_STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION));
-        return entry.getValue();
+    public byte[] get(Query query) {
+        var path = StorageUtil.getFileStoragePath(query.key());
+        var entry = get(path);
+        return entry.getValue().getBytes();
     }
 
     private Entry get(Path path) {
         try {
             return Entry.parseFrom(com.google.common.io.Files.toByteArray(path.toFile()));
         } catch (IOException e) {
+            log.error(ERR, e);
             return Entry.newBuilder().setKey("-1").setValue("-1").build();
         }
     }
 
     @Override
-    public String set(Query query) {
+    public byte[] set(Query query) {
         var entry = Entry.newBuilder()
-                .setKey(query.key().key())
-                .setValue(query.value().value())
+                .setKey(query.key().rawKey())
+                .setValue(query.value().rawValue())
                 .build();
-        return set(entry);
+        return set(entry).getBytes();
     }
 
     private String set(Entry entry) {
         try {
-            var path = FILE_STORAGE_DIRECTORY.resolve(entry.getKey() + FILE_EXTENSION);
+            var rawKey = entry.getKey();
+            var path = StorageUtil.getFileStoragePath(new Key(rawKey));
             com.google.common.io.Files.write(entry.toByteArray(), path.toFile());
         } catch (IOException e) {
-            return "FAILED TO WRITE";
+            log.error(ERR, e);
+            return ERR;
         }
-        return "OK";
+        return OK;
     }
 
     @Override
-    public String delete(Query query) {
-        var key = query.key().key();
-        return delete(FILE_STORAGE_DIRECTORY.resolve(key + FILE_EXTENSION)) ? "OK" : "ERROR";
+    public byte[] delete(Query query) {
+        var path = StorageUtil.getFileStoragePath(query.key());
+        return (delete(path) ? OK : ERR).getBytes();
     }
 
     private boolean delete(Path path) {
         try {
             return Files.deleteIfExists(path);
         } catch (IOException e) {
+            log.error(ERR, e);
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public String count() {
+    public byte[] count() {
         try (var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
-            return String.valueOf(stream.count());
+            return Longs.toByteArray(stream.count());
         } catch (IOException e) {
-            return "ERROR";
+            log.error(ERR, e);
+            return ERR.getBytes();
         }
     }
 
     @Override
-    public String dump() {
-        try (var writer = Files.newBufferedWriter(Paths.get("dump.csv"), StandardOpenOption.CREATE, StandardOpenOption.WRITE); var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
+    public byte[] dump() {
+        try (var writer = Files.newBufferedWriter(Paths.get("dump.csv"));
+             var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
             writer.write("KEY,VALUE");
             writer.newLine();
-            stream.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)).forEach(path -> {
+            stream.filter(Files::isRegularFile).forEach(path -> {
                 var entry = get(path);
                 try {
                     writer.write(String.format("%s,%s", entry.getKey(), entry.getValue()));
@@ -94,31 +111,38 @@ public class FileStorage implements Storage {
                 }
             });
         } catch (IOException e) {
-            return "ERROR";
+            log.error(ERR, e);
+            return ERR.getBytes();
         }
-        return "OK";
+        return OK.getBytes();
     }
 
     @Override
-    public String flush() {
+    public byte[] flush() {
         try (var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
-            stream.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)).forEach(path -> {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    // hej
-                }
-            });
+            stream.filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            log.error(ERR, e);
+                        }
+                    });
         } catch (IOException e) {
-            return "ERROR";
+            log.error(ERR, e);
+            return ERR.getBytes();
         }
-        return "OK";
+        return OK.getBytes();
     }
 
-    public String save(Collection<Entry> entries) {
-        for (var entry : entries) {
-            set(entry);
+    @Override
+    public byte[] save(Map<Key, Value> storage) {
+        for (var entry : storage.entrySet()) {
+            set(Entry.newBuilder()
+                    .setKey(entry.getKey().rawKey())
+                    .setValue(entry.getValue().rawValue())
+                    .build());
         }
-        return "SAVED KEYS: " + entries.size();
+        return (OK + " " + storage.size()).getBytes();
     }
 }

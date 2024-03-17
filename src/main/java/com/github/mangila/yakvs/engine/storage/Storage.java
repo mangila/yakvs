@@ -1,17 +1,25 @@
 package com.github.mangila.yakvs.engine.storage;
 
+import com.github.mangila.proto.Entry;
+import com.github.mangila.yakvs.engine.Key;
+import com.github.mangila.yakvs.engine.Value;
 import com.github.mangila.yakvs.engine.query.Query;
 
+import java.util.Collection;
+import java.util.Map;
+
 public interface Storage {
-    String get(Query query);
+    byte[] get(Query query);
 
-    String set(Query query);
+    byte[] set(Query query);
 
-    String delete(Query query);
+    byte[] delete(Query query);
 
-    String count();
+    byte[] count();
 
-    String dump();
+    byte[] dump();
 
-    String flush();
+    byte[] flush();
+
+    byte[] save(Map<Key, Value> storage);
 }

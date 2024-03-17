@@ -4,6 +4,7 @@ import com.github.mangila.yakvs.common.EndOfStreamException;
 import com.github.mangila.yakvs.engine.Engine;
 import com.github.mangila.yakvs.engine.Parser;
 import com.github.mangila.yakvs.engine.query.Query;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,6 +14,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+@Slf4j
 public class ServerSessionHandler implements Runnable {
 
     private static final String POISON_PILL = "POISON_PILL";
@@ -47,14 +49,14 @@ public class ServerSessionHandler implements Runnable {
                             throw new EndOfStreamException();
                         }
                         Optional<Query> query = parser.parse(request);
-                        String value = query.map(engine::execute)
-                                .orElseGet(() -> String.format(ERROR_MESSAGE, request));
-                        buffer = ByteBuffer.wrap(value.getBytes());
+                        var value = query.map(engine::execute).orElseGet(() -> String.format(ERROR_MESSAGE, request).getBytes());
+                        buffer = ByteBuffer.wrap(value);
                         while (buffer.hasRemaining()) {
                             channel.write(buffer);
                         }
                         selectionKey.interestOps(SelectionKey.OP_READ);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
+                        log.error("ERR", e);
                         Server.closeChannel(selectionKey);
                     }
                 });

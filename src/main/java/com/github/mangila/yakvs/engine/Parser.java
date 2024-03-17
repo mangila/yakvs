@@ -17,10 +17,10 @@ public class Parser {
     public static final Map<String, Query> KNOWN_QUERIES = new HashMap<>();
 
     static {
-        KNOWN_QUERIES.put("COUNT", new Query(Keyword.COUNT));
-        KNOWN_QUERIES.put("FLUSH", new Query(Keyword.FLUSH));
-        KNOWN_QUERIES.put("DUMP", new Query(Keyword.DUMP));
-        KNOWN_QUERIES.put("SAVE", new Query(Keyword.SAVE));
+        KNOWN_QUERIES.put(Keyword.COUNT.toString(), new Query(Keyword.COUNT));
+        KNOWN_QUERIES.put(Keyword.FLUSH.toString(), new Query(Keyword.FLUSH));
+        KNOWN_QUERIES.put(Keyword.DUMP.toString(), new Query(Keyword.DUMP));
+        KNOWN_QUERIES.put(Keyword.SAVE.toString(), new Query(Keyword.SAVE));
     }
 
     public Optional<Query> parse(String request) {

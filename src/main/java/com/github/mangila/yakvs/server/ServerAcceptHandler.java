@@ -1,5 +1,7 @@
 package com.github.mangila.yakvs.server;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -8,6 +10,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.UUID;
 
+@Slf4j
 public class ServerAcceptHandler implements Runnable {
 
     private final int port;
@@ -31,6 +34,7 @@ public class ServerAcceptHandler implements Runnable {
                 channel.register(selector, SelectionKey.OP_READ, session);
             }
         } catch (IOException e) {
+            log.error("ERR", e);
             throw new RuntimeException(e);
         }
     }
