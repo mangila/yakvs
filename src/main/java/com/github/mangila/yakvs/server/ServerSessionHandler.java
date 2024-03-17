@@ -56,8 +56,12 @@ public class ServerSessionHandler implements Runnable {
                         }
                         selectionKey.interestOps(SelectionKey.OP_READ);
                     } catch (Exception e) {
-                        log.error("ERR", e);
-                        Server.closeChannel(selectionKey);
+                        if (e instanceof EndOfStreamException) {
+                            // ignore
+                        } else {
+                            log.error("ERR", e);
+                            Server.closeChannel(selectionKey);
+                        }
                     }
                 });
             }
