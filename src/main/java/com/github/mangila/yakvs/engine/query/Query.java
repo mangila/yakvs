@@ -1,5 +1,8 @@
 package com.github.mangila.yakvs.engine.query;
 
+import com.github.mangila.yakvs.engine.Key;
+import com.github.mangila.yakvs.engine.Value;
+
 public record Query(Keyword keyword, Key key, Value value) {
 
     public Query(Keyword keyword) {

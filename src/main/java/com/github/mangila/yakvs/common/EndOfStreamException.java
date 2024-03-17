@@ -1,6 +1,8 @@
 package com.github.mangila.yakvs.common;
 
-public class EndOfStreamException extends RuntimeException {
+import java.io.IOException;
+
+public class EndOfStreamException extends IOException {
     public EndOfStreamException() {
         super();
     }

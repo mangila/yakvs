@@ -3,7 +3,7 @@ package com.github.mangila.yakvs.server;
 import tlschannel.TlsChannel;
 
 import java.nio.ByteBuffer;
-import java.util.UUID;
+import java.nio.channels.SocketChannel;
 
 @lombok.Getter
 @lombok.Setter
@@ -11,8 +11,6 @@ import java.util.UUID;
 @lombok.NoArgsConstructor
 @lombok.Builder
 public class Session {
-    private final String sessionId = UUID.randomUUID().toString();
+    private String sessionId;
     private TlsChannel tlsChannel;
-    private ByteBuffer readBuffer;
-    private ByteBuffer writeBuffer;
 }
