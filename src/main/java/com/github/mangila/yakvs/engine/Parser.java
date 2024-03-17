@@ -23,18 +23,18 @@ public class Parser {
         KNOWN_QUERIES.put("SAVE", new Query(Keyword.SAVE));
     }
 
-    public Optional<Query> parse(String query) {
-        if (Objects.isNull(query) || query.isBlank()) {
+    public Optional<Query> parse(String request) {
+        if (Objects.isNull(request) || request.isBlank()) {
             return Optional.empty();
         }
-        if (KNOWN_QUERIES.containsKey(query)) {
-            return Optional.of(KNOWN_QUERIES.get(query));
+        if (KNOWN_QUERIES.containsKey(request)) {
+            return Optional.of(KNOWN_QUERIES.get(request));
         }
         for (var pattern : PATTERNS) {
-            if (pattern.matcher(query).matches()) {
-                var q = Query.toQuery(query);
-                KNOWN_QUERIES.put(query, q);
-                return Optional.of(q);
+            if (pattern.matcher(request).matches()) {
+                var query = Query.toQuery(request);
+                KNOWN_QUERIES.put(request, query);
+                return Optional.of(query);
             }
         }
         return Optional.empty();
