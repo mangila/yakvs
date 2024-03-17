@@ -97,24 +97,15 @@ public class FileStorage implements Storage {
 
     @Override
     public byte[] dump() {
-        try (var writer = Files.newBufferedWriter(Paths.get("dump.csv"));
-             var stream = Files.walk(FILE_STORAGE_DIRECTORY)) {
-            writer.write("KEY,VALUE");
-            writer.newLine();
-            stream.filter(Files::isRegularFile).forEach(path -> {
-                var entry = get(path);
-                try {
-                    writer.write(String.format("%s,%s", entry.getKey(), entry.getValue()));
-                    writer.newLine();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+        var csvPath = Paths.get("dump.csv");
+        byte[] csvBytes;
+        try {
+            csvBytes = StorageUtil.writeFileStorageDump(csvPath);
+            Files.deleteIfExists(csvPath);
         } catch (IOException e) {
-            log.error(ERR, e);
-            return ERR.getBytes();
+            throw new RuntimeException(e);
         }
-        return OK.getBytes();
+        return csvBytes;
     }
 
     @Override
