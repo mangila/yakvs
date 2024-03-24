@@ -128,8 +128,9 @@ public class FileStorage implements Storage {
 
     @Override
     public byte[] save(Map<Key, Value> storage) {
+        var factory = Thread.ofVirtual().factory();
         for (var entry : storage.entrySet()) {
-            Thread.ofVirtual().start(() -> set(Entry.newBuilder()
+            factory.newThread(() -> set(Entry.newBuilder()
                     .setKey(entry.getKey().rawKey())
                     .setValue(entry.getValue().rawValue())
                     .build()));
