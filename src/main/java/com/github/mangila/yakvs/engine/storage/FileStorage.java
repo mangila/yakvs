@@ -129,10 +129,10 @@ public class FileStorage implements Storage {
     @Override
     public byte[] save(Map<Key, Value> storage) {
         for (var entry : storage.entrySet()) {
-            set(Entry.newBuilder()
+            Thread.ofVirtual().start(() -> set(Entry.newBuilder()
                     .setKey(entry.getKey().rawKey())
                     .setValue(entry.getValue().rawValue())
-                    .build());
+                    .build()));
         }
         return (OK + " " + storage.size()).getBytes();
     }
