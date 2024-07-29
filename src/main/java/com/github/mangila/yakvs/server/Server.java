@@ -8,7 +8,7 @@ public interface Server {
 
     ExecutorService VIRTUAL_POOL = Executors.newVirtualThreadPerTaskExecutor();
 
-    void start() throws IOException;
+    void start() throws IOException, InterruptedException;
 
     void stop();
 }
