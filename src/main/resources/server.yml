@@ -1,4 +1,2 @@
-port: 12542
-keystore: /jks
-selfSignCertificate: false
-bufferSize: 1024
+port: 11866
+selfSignCertificate: true

@@ -1,4 +1,7 @@
 # YAKVS
 Yet Another Key Value Store
 
-* Java NIO Selector server
+## SSL
+Properties at Runtime.
+* `-Djavax.net.ssl.keyStore=$JDKPath$/lib/security/cacerts`
+* `-Djavax.net.ssl.keyStorePassword=changeit`
