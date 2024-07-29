@@ -1,14 +1,18 @@
-package com.github.mangila.yakvs.server;
+package com.github.mangila.yakvs.server.ssl;
 
 import com.github.mangila.yakvs.engine.Engine;
 import com.github.mangila.yakvs.engine.Parser;
 import com.github.mangila.yakvs.engine.Storage;
+import com.github.mangila.yakvs.server.PlainWorker;
+import com.github.mangila.yakvs.server.Server;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 
+@Slf4j
 public class SslServer implements Runnable, Server {
 
     private final int port;
@@ -25,6 +29,7 @@ public class SslServer implements Runnable, Server {
 
     @Override
     public void start() throws IOException {
+        log.info("Accepting connections on SslServer bound to port: {}", port);
         try (var serverSocket = factory.createServerSocket(port)) {
             while (!serverSocket.isClosed()) {
                 var socket = (SSLSocket) serverSocket.accept();

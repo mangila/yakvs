@@ -7,14 +7,15 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
 
-class DriverTest {
+class SslDriverTest {
 
-    private Driver driver;
+    private SslDriver sslDriver;
 
     @BeforeEach
     void setUp() {
-        driver = new Driver();
+        sslDriver = new SslDriver();
     }
 
     @AfterEach
@@ -22,10 +23,10 @@ class DriverTest {
     }
 
     @Test
-    void test() {
-        driver.initialize();
+    void initialize() throws Exception {
+        sslDriver.initialize();
         await()
                 .atMost(5, TimeUnit.SECONDS)
-                .until(driver::isOpen);
+                .until(sslDriver::isOpen);
     }
 }

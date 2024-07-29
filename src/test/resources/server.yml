@@ -1,0 +1,2 @@
+port: 11866
+selfSignCertificate: true

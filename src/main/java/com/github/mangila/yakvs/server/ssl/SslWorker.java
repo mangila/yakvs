@@ -1,4 +1,4 @@
-package com.github.mangila.yakvs.server;
+package com.github.mangila.yakvs.server.ssl;
 
 import com.github.mangila.yakvs.engine.Engine;
 import com.github.mangila.yakvs.engine.Parser;

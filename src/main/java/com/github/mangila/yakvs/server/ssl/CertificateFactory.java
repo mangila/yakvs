@@ -1,4 +1,4 @@
-package com.github.mangila.yakvs.server;
+package com.github.mangila.yakvs.server.ssl;
 
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;

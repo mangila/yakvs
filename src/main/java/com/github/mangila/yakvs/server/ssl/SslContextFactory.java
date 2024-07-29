@@ -1,4 +1,4 @@
-package com.github.mangila.yakvs.server;
+package com.github.mangila.yakvs.server.ssl;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
