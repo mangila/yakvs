@@ -1,4 +1,7 @@
 package com.github.mangila.yakvs.engine;
 
-public record Key(String rawKey) {
+import lombok.Builder;
+
+@Builder
+public record Key(byte[] rawKey) {
 }

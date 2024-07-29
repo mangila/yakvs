@@ -1,4 +1,4 @@
-package com.github.mangila.yakvs.engine.query;
+package com.github.mangila.yakvs.engine;
 
 public enum Keyword {
     SET,

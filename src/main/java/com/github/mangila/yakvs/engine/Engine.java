@@ -1,34 +1,27 @@
 package com.github.mangila.yakvs.engine;
 
 import com.github.mangila.yakvs.common.StorageException;
-import com.github.mangila.yakvs.engine.query.Query;
-import com.github.mangila.yakvs.engine.storage.FileStorage;
-import com.github.mangila.yakvs.engine.storage.InMemoryStorage;
-import com.github.mangila.yakvs.engine.storage.RemoteStorage;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Engine {
-    private final FileStorage fileStorage;
-    private final InMemoryStorage inMemoryStorage;
-    private final RemoteStorage remoteStorage;
 
-    public Engine(FileStorage fileStorage, InMemoryStorage inMemoryStorage, RemoteStorage remoteStorage) {
-        this.fileStorage = fileStorage;
-        this.inMemoryStorage = inMemoryStorage;
-        this.remoteStorage = remoteStorage;
+    private final Storage storage;
+
+    public Engine(Storage storage) {
+        this.storage = storage;
     }
 
     public byte[] execute(Query query) {
         try {
-            return switch (query.keyword()) {
-                case GET -> inMemoryStorage.get(query);
-                case SET -> inMemoryStorage.set(query);
-                case DELETE -> inMemoryStorage.delete(query);
-                case COUNT -> inMemoryStorage.count();
-                case DUMP -> fileStorage.dump();
-                case FLUSH -> inMemoryStorage.flush();
-                case SAVE -> fileStorage.save(inMemoryStorage.getStorage());
+            return switch (query.getKeyword()) {
+                case GET -> storage.get(query);
+                case SET -> storage.set(query);
+                case DELETE -> storage.delete(query);
+                case COUNT -> storage.count();
+                case DUMP -> storage.dump();
+                case FLUSH -> storage.flush();
+                case SAVE -> storage.save();
                 case null -> throw new StorageException("Not a valid Query");
             };
         } catch (Exception e) {
