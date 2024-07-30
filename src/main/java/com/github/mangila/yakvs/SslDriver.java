@@ -4,24 +4,28 @@ import com.github.mangila.yakvs.common.ServerConfig;
 import com.github.mangila.yakvs.server.ssl.CertificateFactory;
 import com.github.mangila.yakvs.server.ssl.SslContextFactory;
 import com.github.mangila.yakvs.server.ssl.SslServer;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.security.KeyStore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@Getter
 public class SslDriver {
 
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
     private static final String SELF_SIGNED_CERT_ALIAS = "mangila-cert";
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load();
-    private boolean open;
 
     static {
         System.setProperty("javax.net.debug", "ssl");
     }
+
+    private SslServer server;
 
     public static void main(String[] args) {
         var driver = new SslDriver();
@@ -49,12 +53,20 @@ public class SslDriver {
             keystore.setCertificateEntry(SELF_SIGNED_CERT_ALIAS, certificate);
         }
         var sslContext = SslContextFactory.getInstance("TLS", keystoreLocation, keystorePassword);
-        var server = new SslServer(port, sslContext);
+        this.server = new SslServer(port, sslContext);
         EXECUTOR_SERVICE.execute(server);
-        open = Boolean.TRUE;
     }
 
-    public boolean isOpen() {
-        return open;
+    public void close() {
+        try {
+            server.close();
+            EXECUTOR_SERVICE.shutdown();
+            while (!EXECUTOR_SERVICE.awaitTermination(5, TimeUnit.SECONDS)) {
+                EXECUTOR_SERVICE.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            EXECUTOR_SERVICE.shutdownNow();
+        }
     }
+
 }

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
 
 class SslDriverTest {
 
@@ -20,13 +19,13 @@ class SslDriverTest {
 
     @AfterEach
     void tearDown() {
+        sslDriver.close();
     }
 
     @Test
     void initialize() throws Exception {
         sslDriver.initialize();
-        await()
-                .atMost(5, TimeUnit.SECONDS)
-                .until(sslDriver::isOpen);
+        await().atMost(5, TimeUnit.SECONDS)
+                .until(() -> sslDriver.getServer().isOpen());
     }
 }

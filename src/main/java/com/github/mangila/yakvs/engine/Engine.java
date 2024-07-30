@@ -19,7 +19,7 @@ public class Engine {
                 case SET -> storage.set(query);
                 case DELETE -> storage.delete(query);
                 case COUNT -> storage.count();
-                case DUMP -> storage.dump();
+                case KEYS -> storage.keys();
                 case FLUSH -> storage.flush();
                 case SAVE -> storage.save();
                 case null -> throw new StorageException("Not a valid Query");

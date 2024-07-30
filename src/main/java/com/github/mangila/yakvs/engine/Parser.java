@@ -10,7 +10,7 @@ public class Parser {
     private static final List<Pattern> PATTERNS = List.of(
             Pattern.compile("^SET \\S+ \\S+\\z"),
             Pattern.compile("^(GET|DELETE) \\S+\\z"),
-            Pattern.compile("^(COUNT|FLUSH|DUMP|SAVE)\\z")
+            Pattern.compile("^(COUNT|FLUSH|KEYS|SAVE)\\z")
     );
 
     public Optional<Query> parse(String request) {
