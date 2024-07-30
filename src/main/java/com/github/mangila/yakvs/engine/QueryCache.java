@@ -38,7 +38,7 @@ public class QueryCache {
                             .build()
                     )
                     .value(Value.builder()
-                            .rawValue(split[2].getBytes())
+                            .value(split[2].getBytes())
                             .build()
                     )
                     .rawQuery(request)

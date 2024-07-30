@@ -6,12 +6,12 @@ import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Storage {
@@ -23,22 +23,28 @@ public class Storage {
     public static final Path BINPB = Path.of("storage.binpb");
 
     static {
-        if (!java.nio.file.Files.exists(BINPB)) {
-            try {
+        try {
+            if (!java.nio.file.Files.exists(BINPB)) {
                 java.nio.file.Files.createFile(BINPB);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
+            var storage = ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile()));
+            storage.getMapMap().forEach((key, value) -> STORAGE.put(Key.builder()
+                            .key(key)
+                            .build(),
+                    Value.builder()
+                            .value(value.toByteArray())
+                            .build()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public byte[] get(Query query) {
-
         var value = STORAGE.get(query.getKey());
         if (Objects.isNull(value)) {
             return ERR;
         }
-        return value.rawValue();
+        return value.value();
     }
 
     public byte[] set(Query query) {
@@ -55,19 +61,19 @@ public class Storage {
         return Ints.toByteArray(STORAGE.size());
     }
 
-    public byte[] dump() {
+    public byte[] keys() {
         try {
-            var builder = ProtoStorage.newBuilder();
+            var builder = ProtoStorage.newBuilder()
+                    .mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile())));
             for (var entry : STORAGE.entrySet()) {
-                builder.putMap(entry.getKey().key(),
-                        ByteString.copyFrom(entry.getValue().rawValue()));
+                builder.putMap(entry.getKey().key(), ByteString.EMPTY);
             }
-            var proto = builder.mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile())))
-                    .build();
-            proto.getMapMap().forEach((s, bytes) -> {
-                log.info(s);
-            });
-            return proto.toByteArray();
+            return builder.build()
+                    .getMapMap()
+                    .keySet()
+                    .stream()
+                    .collect(Collectors.joining(System.lineSeparator()))
+                    .getBytes();
         } catch (IOException e) {
             log.error("ERR", e);
             return ERR;
@@ -90,7 +96,7 @@ public class Storage {
             var builder = ProtoStorage.newBuilder();
             for (var entry : STORAGE.entrySet()) {
                 builder.putMap(entry.getKey().key(),
-                        ByteString.copyFrom(entry.getValue().rawValue()));
+                        ByteString.copyFrom(entry.getValue().value()));
             }
             var proto = builder.mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile())))
                     .build();

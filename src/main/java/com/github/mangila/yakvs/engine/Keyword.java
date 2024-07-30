@@ -5,7 +5,7 @@ public enum Keyword {
     GET,
     DELETE,
     COUNT,
-    DUMP,
+    KEYS,
     FLUSH,
     SAVE;
 }

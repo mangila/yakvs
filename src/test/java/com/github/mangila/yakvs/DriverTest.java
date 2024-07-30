@@ -26,13 +26,14 @@ class DriverTest {
 
     @AfterEach
     void tearDown() {
+        driver.close();
     }
 
     @Test
     void test() throws IOException {
         driver.initialize();
         await().atMost(5, TimeUnit.SECONDS)
-                .until(driver::isOpen);
+                .until(() -> driver.getServer().isOpen());
         try (var socket = new Socket("localhost", 11866);
              var out = new PrintWriter(socket.getOutputStream(), true);
              var in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
@@ -43,6 +44,7 @@ class DriverTest {
                     """);
             assertThat(in.readLine()).isEqualTo("OK");
         }
+
         try (var socket = new Socket("localhost", 11866);
              var out = new PrintWriter(socket.getOutputStream(), true);
              var in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
@@ -63,15 +65,15 @@ class DriverTest {
         try (var socket = new Socket("localhost", 11866);
              var out = new PrintWriter(socket.getOutputStream(), true);
              var in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            out.println("DUMP");
-            System.out.println(in.lines().collect(Collectors.joining(",")));
+            out.println("KEYS");
+            System.out.println(in.lines().collect(Collectors.joining(System.lineSeparator())));
         }
 
         try (var socket = new Socket("localhost", 11866);
              var out = new PrintWriter(socket.getOutputStream(), true);
              var in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             out.println("FLUSH");
-            System.out.println(in.lines().collect(Collectors.joining(",")));
+            assertThat(in.readLine()).isEqualTo("OK");
         }
     }
 }

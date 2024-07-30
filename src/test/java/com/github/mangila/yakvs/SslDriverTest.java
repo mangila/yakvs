@@ -19,12 +19,13 @@ class SslDriverTest {
 
     @AfterEach
     void tearDown() {
+        sslDriver.close();
     }
 
     @Test
     void initialize() throws Exception {
         sslDriver.initialize();
         await().atMost(5, TimeUnit.SECONDS)
-                .until(sslDriver::isOpen);
+                .until(() -> sslDriver.getServer().isOpen());
     }
 }
