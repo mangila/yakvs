@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.github.mangila.proto";
+
+enum Keyword {
+  SET = 0;
+  GET = 1;
+  DELETE = 2;
+  COUNT = 3;
+  KEYS = 4;
+  FLUSH = 5;
+  SAVE = 6;
+}
+
+message Query {
+  Keyword keyword = 1;
+  Entry entry = 2;
+}
+
+message Entry {
+  string key = 1;
+  bytes value = 2;
+}
+
+message ProtoStorage {
+  map<string, bytes> map = 1;
+}

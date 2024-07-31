@@ -18,7 +18,9 @@ public class PlainWorker implements Runnable {
     private final Parser parser;
     private final Engine engine;
 
-    public PlainWorker(Socket socket, Parser parser, Engine engine) {
+    public PlainWorker(Socket socket,
+                       Parser parser,
+                       Engine engine) {
         this.socket = socket;
         this.parser = parser;
         this.engine = engine;
@@ -26,7 +28,8 @@ public class PlainWorker implements Runnable {
 
     @Override
     public void run() {
-        try (var reader = getReader(); var out = socket.getOutputStream()) {
+        try (var reader = getReader();
+             var out = socket.getOutputStream()) {
             StringBuilder request = new StringBuilder();
             while (reader.ready()) {
                 var line = reader.readLine();
@@ -43,7 +46,7 @@ public class PlainWorker implements Runnable {
         }
     }
 
-    public BufferedReader getReader() throws IOException {
+    private BufferedReader getReader() throws IOException {
         return new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 }

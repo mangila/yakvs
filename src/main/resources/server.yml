@@ -1,2 +1,2 @@
+name: "mangila-yakvs-ssl-database"
 port: 11866
-selfSignCertificate: true
