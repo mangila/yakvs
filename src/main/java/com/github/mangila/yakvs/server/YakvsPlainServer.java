@@ -1,15 +1,14 @@
-package com.github.mangila.yakvs.server.ssl;
+package com.github.mangila.yakvs.server;
 
 import com.github.mangila.yakvs.engine.Engine;
 import com.github.mangila.yakvs.engine.Parser;
+import com.github.mangila.yakvs.engine.QueryCache;
 import com.github.mangila.yakvs.engine.Storage;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
+import javax.net.ServerSocketFactory;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,27 +16,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-public class SslServer implements Runnable {
+public class PlainServer implements Runnable {
 
     private final int port;
     private final Parser parser;
     private final Engine engine;
-    private final SSLServerSocketFactory serverSocketFactory;
+    private final ServerSocketFactory serverSocketFactory;
     private final ExecutorService executorService;
     private final AtomicBoolean open;
-    private SSLServerSocket serverSocket;
+    private ServerSocket serverSocket;
 
-    public SslServer(int port, SSLContext sslContext) {
+    public PlainServer(int port) {
         this.port = port;
-        this.parser = new Parser();
+        this.parser = new Parser(new QueryCache());
         this.engine = new Engine(new Storage());
-        this.serverSocketFactory = sslContext.getServerSocketFactory();
+        this.serverSocketFactory = ServerSocketFactory.getDefault();
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
         this.open = new AtomicBoolean(Boolean.FALSE);
     }
 
     public void open() {
-        log.info("Accepting connections on port: {}", port);
         open.set(Boolean.TRUE);
     }
 
@@ -46,35 +44,35 @@ public class SslServer implements Runnable {
     }
 
     public void close() {
-        log.info("Closing connections on port: {}", port);
         open.set(Boolean.FALSE);
     }
 
     @Override
     public void run() {
         this.serverSocket = openServerSocket();
+        log.info("Accepting connections: {}", serverSocket);
         while (isOpen()) {
             try {
-                var client = (SSLSocket) serverSocket.accept();
+                var client = serverSocket.accept();
                 TimeUnit.MILLISECONDS.sleep(100);
-                executorService.submit(new SslWorker(client, parser, engine));
+                executorService.submit(new PlainWorker(client, parser, engine));
             } catch (SocketTimeoutException e) {
                 // ignore
-            } catch (IOException e) {
-                log.error("ERR", e);
-                close();
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 log.error("ERR", e);
-                close();
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                log.error("ERR", e);
+                break;
             }
         }
         closeServerSocket();
     }
 
-    private SSLServerSocket openServerSocket() {
+    private ServerSocket openServerSocket() {
         try {
-            var s = (SSLServerSocket) serverSocketFactory.createServerSocket(port);
+            var s = serverSocketFactory.createServerSocket(port);
             s.setSoTimeout(2000);
             open();
             return s;
@@ -86,6 +84,7 @@ public class SslServer implements Runnable {
 
     private void closeServerSocket() {
         try {
+            log.info("Closing connections: {}", serverSocket);
             this.serverSocket.close();
             this.executorService.close();
             while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -96,6 +95,5 @@ public class SslServer implements Runnable {
         } catch (InterruptedException e) {
             executorService.shutdownNow();
         }
-        log.info("{} is closed on port: {}", this.getClass().getSimpleName(), port);
     }
 }

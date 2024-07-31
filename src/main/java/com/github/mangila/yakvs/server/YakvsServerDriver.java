@@ -1,7 +1,6 @@
-package com.github.mangila.yakvs;
+package com.github.mangila.yakvs.server;
 
 import com.github.mangila.yakvs.common.ServerConfig;
-import com.github.mangila.yakvs.server.PlainServer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,24 +10,27 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Getter
-public class Driver {
+public class YakvsServerDriver {
 
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
-    public static final ServerConfig SERVER_CONFIG = ServerConfig.load();
+    public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server-plain.yml");
 
-    private PlainServer server;
+    private YakvsPlainServer server;
+
+    public YakvsServerDriver(ServerConfig serverConfig) {
+        if (serverConfig.getPort() < 0) {
+            throw new IllegalArgumentException("Port cannot be less than 0");
+        }
+        this.server = new YakvsPlainServer(serverConfig.getPort(), serverConfig.getName());
+    }
 
     public static void main(String[] args) {
-        var driver = new Driver();
+        var driver = new YakvsServerDriver(SERVER_CONFIG);
         driver.initialize();
     }
 
     public void initialize() {
-        if (SERVER_CONFIG.getPort() < 0) {
-            throw new IllegalArgumentException("Port cannot be less than 0");
-        }
-        this.server = new PlainServer(SERVER_CONFIG.getPort());
         EXECUTOR_SERVICE.execute(server);
     }
 
