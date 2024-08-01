@@ -3,7 +3,9 @@ package com.github.mangila.yakvs.server.ssl;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -32,11 +34,9 @@ public class SslContextFactory {
         return sslContext;
     }
 
-    private static KeyStore getTruststore(String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        return KeyStore.getInstance(new File(location), password.toCharArray());
-    }
-
-    private static KeyStore getKeystore(String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        return KeyStore.getInstance(new File(location), password.toCharArray());
+    public static KeyStore getKeystore(String type, String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+        var keystore = KeyStore.getInstance(type);
+        keystore.load(new FileInputStream(location), password.toCharArray());
+        return keystore;
     }
 }

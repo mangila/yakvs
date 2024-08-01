@@ -57,12 +57,9 @@ public class YakvsPlainServer implements Runnable {
                 executorService.submit(new PlainCommand(client, engine));
             } catch (SocketTimeoutException e) {
                 // ignore
-            } catch (InterruptedException e) {
-                log.error("ERR", e);
-                Thread.currentThread().interrupt();
-                break;
             } catch (Exception e) {
                 log.error("ERR", e);
+                close();
                 break;
             }
         }
@@ -84,6 +81,7 @@ public class YakvsPlainServer implements Runnable {
     private void closeServerSocket() {
         try {
             log.info("Closing connections {}: {}", name, serverSocket);
+            close();
             this.serverSocket.close();
             this.executorService.close();
             while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {

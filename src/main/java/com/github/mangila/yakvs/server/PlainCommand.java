@@ -2,9 +2,9 @@ package com.github.mangila.yakvs.server;
 
 import com.github.mangila.proto.Query;
 import com.github.mangila.yakvs.engine.Engine;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.net.Socket;
 
 @Slf4j
@@ -18,16 +18,13 @@ public class PlainCommand implements Runnable {
         this.engine = engine;
     }
 
+    @SneakyThrows
     @Override
     public void run() {
-        try {
-            var query = Query.parseDelimitedFrom(socket.getInputStream());
-            log.info(query.toString());
-            var response = engine.execute(query);
-            response.writeDelimitedTo(socket.getOutputStream());
-            socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        var query = Query.parseDelimitedFrom(socket.getInputStream());
+        log.info(query.toString());
+        var response = engine.execute(query);
+        response.writeDelimitedTo(socket.getOutputStream());
+        socket.close();
     }
 }
