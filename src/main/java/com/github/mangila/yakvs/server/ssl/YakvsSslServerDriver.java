@@ -32,7 +32,7 @@ public class YakvsSslServerDriver {
 
     public static void main(String[] args) {
         try {
-            var sslContext = SslContextFactory.getInstance("TLS");
+            var sslContext = SslContextFactory.getInstance("TLS", "", "", "", "");
             var driver = new YakvsSslServerDriver(SERVER_CONFIG, sslContext);
             driver.initialize();
         } catch (Exception e) {

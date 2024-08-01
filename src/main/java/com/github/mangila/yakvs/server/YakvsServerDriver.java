@@ -14,7 +14,7 @@ public class YakvsServerDriver {
 
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
-    public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server-plain.yml");
+    public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server.yml");
 
     private YakvsPlainServer server;
 

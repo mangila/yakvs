@@ -1,3 +1,7 @@
+mangila-yakvs-test-database.binpb
+mangila-yakvs-ssl-database.binpb
+mangila-yakvs-database.binpb
+mangila-yakvs-ssl-test-database.binpb
 data/
 dump.csv
 target/

@@ -9,11 +9,12 @@ import java.io.IOException;
 @lombok.Getter
 @lombok.Setter
 public class ServerConfig {
-    private int port;
-    private boolean selfSignCertificate;
 
-    public static ServerConfig load() {
-        try (var resources = ServerConfig.class.getClassLoader().getResourceAsStream("server.yml")) {
+    private String name;
+    private int port;
+
+    public static ServerConfig load(String yml) {
+        try (var resources = ServerConfig.class.getClassLoader().getResourceAsStream(yml)) {
             var yaml = new Yaml(new Constructor(ServerConfig.class, new LoaderOptions()));
             return yaml.load(resources);
         } catch (IOException e) {

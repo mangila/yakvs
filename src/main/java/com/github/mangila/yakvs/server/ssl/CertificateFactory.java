@@ -16,10 +16,6 @@ import java.util.Date;
 
 public class CertificateFactory {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
     public static X509Certificate createSelfSignedX509Certificate() throws Exception {
         var issuer = new X500NameBuilder()
                 .addRDN(BCStyle.CN, "Mangila")
@@ -37,6 +33,7 @@ public class CertificateFactory {
                 .build();
         var rsa = generateKeyPair();
         var signer = new JcaContentSignerBuilder("SHA256WithRSA")
+                .setProvider(new BouncyCastleProvider())
                 .setSecureRandom(SecureRandom.getInstanceStrong())
                 .build(rsa.getPrivate());
         var builder = new JcaX509v3CertificateBuilder(issuer,
@@ -46,6 +43,7 @@ public class CertificateFactory {
                 subject,
                 rsa.getPublic());
         return new JcaX509CertificateConverter()
+                .setProvider(new BouncyCastleProvider())
                 .getCertificate(builder.build(signer));
     }
 

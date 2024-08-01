@@ -1,8 +1,6 @@
 package com.github.mangila.yakvs.server;
 
 import com.github.mangila.yakvs.engine.Engine;
-import com.github.mangila.yakvs.engine.Parser;
-import com.github.mangila.yakvs.engine.QueryCache;
 import com.github.mangila.yakvs.engine.Storage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,26 +8,27 @@ import javax.net.ServerSocketFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-public class PlainServer implements Runnable {
+public class YakvsPlainServer implements Runnable {
 
     private final int port;
-    private final Parser parser;
+    private final String name;
     private final Engine engine;
     private final ServerSocketFactory serverSocketFactory;
     private final ExecutorService executorService;
     private final AtomicBoolean open;
     private ServerSocket serverSocket;
 
-    public PlainServer(int port) {
+    public YakvsPlainServer(int port, String name) {
         this.port = port;
-        this.parser = new Parser(new QueryCache());
-        this.engine = new Engine(new Storage());
+        this.name = name.concat(".binpb");
+        this.engine = new Engine(new Storage(Paths.get(this.name)));
         this.serverSocketFactory = ServerSocketFactory.getDefault();
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
         this.open = new AtomicBoolean(Boolean.FALSE);
@@ -50,12 +49,12 @@ public class PlainServer implements Runnable {
     @Override
     public void run() {
         this.serverSocket = openServerSocket();
-        log.info("Accepting connections: {}", serverSocket);
+        log.info("Accepting connections {}: {}", name, serverSocket);
         while (isOpen()) {
             try {
                 var client = serverSocket.accept();
                 TimeUnit.MILLISECONDS.sleep(100);
-                executorService.submit(new PlainWorker(client, parser, engine));
+                executorService.submit(new PlainCommand(client, engine));
             } catch (SocketTimeoutException e) {
                 // ignore
             } catch (InterruptedException e) {
@@ -84,7 +83,7 @@ public class PlainServer implements Runnable {
 
     private void closeServerSocket() {
         try {
-            log.info("Closing connections: {}", serverSocket);
+            log.info("Closing connections {}: {}", name, serverSocket);
             this.serverSocket.close();
             this.executorService.close();
             while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
