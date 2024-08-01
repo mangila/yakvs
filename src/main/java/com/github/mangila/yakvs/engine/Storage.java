@@ -1,110 +1,137 @@
 package com.github.mangila.yakvs.engine;
 
 import com.github.mangila.proto.ProtoStorage;
+import com.github.mangila.proto.Query;
+import com.github.mangila.proto.Response;
 import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
+import lombok.Locked;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class Storage {
 
-    private static final Map<Key, Value> STORAGE = new ConcurrentHashMap<>();
-    private static final byte[] OK = "OK".getBytes();
-    private static final byte[] ERR = "ERR".getBytes();
+    private static final ByteString OK = ByteString.copyFromUtf8("OK");
+    private static final ByteString ERR = ByteString.copyFromUtf8("ERR");
 
-    public static final Path BINPB = Path.of("storage.binpb");
+    private ProtoStorage storage;
+    private final Path diskStorage;
 
-    static {
+    public Storage(Path diskStorage) {
+        this.diskStorage = diskStorage;
+        this.storage = loadFromDisk();
+    }
+
+    private ProtoStorage loadFromDisk() {
         try {
-            if (!java.nio.file.Files.exists(BINPB)) {
-                java.nio.file.Files.createFile(BINPB);
+            if (!java.nio.file.Files.exists(diskStorage)) {
+                java.nio.file.Files.createFile(diskStorage);
             }
-            var storage = ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile()));
-            storage.getMapMap().forEach((key, value) -> STORAGE.put(Key.builder()
-                            .key(key)
-                            .build(),
-                    Value.builder()
-                            .value(value.toByteArray())
-                            .build()));
+            return ProtoStorage.newBuilder()
+                    .mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(diskStorage.toFile())))
+                    .build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public byte[] get(Query query) {
-        var value = STORAGE.get(query.getKey());
-        if (Objects.isNull(value)) {
-            return ERR;
-        }
-        return value.value();
-    }
-
-    public byte[] set(Query query) {
-        STORAGE.put(query.getKey(), query.getValue());
-        return OK;
-    }
-
-    public byte[] delete(Query query) {
-        STORAGE.remove(query.getKey());
-        return OK;
-    }
-
-    public byte[] count() {
-        return Ints.toByteArray(STORAGE.size());
-    }
-
-    public byte[] keys() {
-        try {
-            var builder = ProtoStorage.newBuilder()
-                    .mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile())));
-            for (var entry : STORAGE.entrySet()) {
-                builder.putMap(entry.getKey().key(), ByteString.EMPTY);
-            }
-            return builder.build()
-                    .getMapMap()
-                    .keySet()
-                    .stream()
-                    .collect(Collectors.joining(System.lineSeparator()))
-                    .getBytes();
-        } catch (IOException e) {
-            log.error("ERR", e);
-            return ERR;
-        }
-    }
-
-    public byte[] flush() {
-        STORAGE.clear();
-        try {
-            java.nio.file.Files.deleteIfExists(BINPB);
-        } catch (IOException e) {
-            log.error("ERR", e);
-            return ERR;
-        }
-        return OK;
-    }
-
-    public byte[] save() {
-        try {
-            var builder = ProtoStorage.newBuilder();
-            for (var entry : STORAGE.entrySet()) {
-                builder.putMap(entry.getKey().key(),
-                        ByteString.copyFrom(entry.getValue().value()));
-            }
-            var proto = builder.mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(BINPB.toFile())))
+    @Locked.Read
+    public Response get(Query query) {
+        var key = query.getEntry().getKey();
+        var value = storage.getMapOrDefault(key, ByteString.EMPTY);
+        if (value.isEmpty()) {
+            return Response.newBuilder()
+                    .setValue(ERR)
                     .build();
-            Files.write(proto.toByteArray(), BINPB.toFile());
-            return OK;
+        }
+        return Response.newBuilder()
+                .setValue(value)
+                .build();
+    }
+
+    @Locked.Write
+    public Response set(Query query) {
+        var key = query.getEntry().getKey();
+        var value = query.getEntry().getValue();
+        storage = storage.toBuilder()
+                .putMap(key, value)
+                .build();
+        return Response.newBuilder()
+                .setValue(OK)
+                .build();
+    }
+
+    @Locked.Write
+    public Response delete(Query query) {
+        var key = query.getEntry().getKey();
+        storage = storage.toBuilder()
+                .removeMap(key)
+                .build();
+        return Response.newBuilder()
+                .setValue(OK)
+                .build();
+    }
+
+    @Locked.Read
+    public Response count() {
+        var count = storage.getMapCount();
+        var bytes = Ints.toByteArray(count);
+        return Response.newBuilder()
+                .setValue(ByteString.copyFrom(bytes))
+                .build();
+    }
+
+    @Locked.Read
+    public Response keys() {
+        var proto = ProtoStorage.newBuilder()
+                .mergeFrom(storage)
+                .mergeFrom(loadFromDisk())
+                .build();
+        var keys = proto.getMapMap()
+                .keySet()
+                .stream()
+                .collect(Collectors.joining(System.lineSeparator()));
+        return Response.newBuilder()
+                .setValue(ByteString.copyFromUtf8(keys))
+                .build();
+    }
+
+    @Locked.Write
+    public Response flush() {
+        try {
+            this.storage = ProtoStorage.newBuilder().build();
+            java.nio.file.Files.deleteIfExists(diskStorage);
         } catch (IOException e) {
             log.error("ERR", e);
-            return ERR;
+            return Response.newBuilder()
+                    .setValue(ERR)
+                    .build();
+        }
+        return Response.newBuilder()
+                .setValue(OK)
+                .build();
+    }
+
+    @Locked.Write
+    public Response save() {
+        try {
+            var proto = ProtoStorage.newBuilder(loadFromDisk())
+                    .mergeFrom(storage)
+                    .build();
+            Files.write(proto.toByteArray(), diskStorage.toFile());
+            return Response.newBuilder()
+                    .setValue(OK)
+                    .build();
+        } catch (IOException e) {
+            log.error("ERR", e);
+            return Response.newBuilder()
+                    .setValue(ERR)
+                    .build();
         }
     }
 }

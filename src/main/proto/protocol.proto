@@ -13,6 +13,10 @@ enum Keyword {
   SAVE = 6;
 }
 
+message Response {
+  bytes value = 1;
+}
+
 message Query {
   Keyword keyword = 1;
   Entry entry = 2;

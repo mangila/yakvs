@@ -1,6 +1,9 @@
 package com.github.mangila.yakvs.engine;
 
+import com.github.mangila.proto.Query;
+import com.github.mangila.proto.Response;
 import com.github.mangila.yakvs.common.StorageException;
+import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -12,7 +15,7 @@ public class Engine {
         this.storage = storage;
     }
 
-    public byte[] execute(Query query) {
+    public Response execute(Query query) {
         try {
             return switch (query.getKeyword()) {
                 case GET -> storage.get(query);
@@ -22,6 +25,7 @@ public class Engine {
                 case KEYS -> storage.keys();
                 case FLUSH -> storage.flush();
                 case SAVE -> storage.save();
+                case UNRECOGNIZED -> throw new StorageException("Not a valid Query");
                 case null -> throw new StorageException("Not a valid Query");
             };
         } catch (Exception e) {

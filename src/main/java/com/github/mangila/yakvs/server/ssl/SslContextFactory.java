@@ -5,20 +5,23 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.cert.CertificateException;
 
 public class SslContextFactory {
 
-    public static SSLContext getInstance(String protocol, String file, String password)
+    public static SSLContext getInstance(String protocol,
+                                         String keystoreLocation,
+                                         String keystorePassword,
+                                         String truststoreLocation,
+                                         String truststorePassword)
             throws GeneralSecurityException, IOException {
-        KeyStore keystore = KeyStore.getInstance(new File(file), password.toCharArray());
+        KeyStore keystore = KeyStore.getInstance(new File("file"), "password".toCharArray());
         KeyManagerFactory keyManagerFactory =
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keystore, password.toCharArray());
+        keyManagerFactory.init(keystore, "password".toCharArray());
         TrustManagerFactory trustManagerFactory =
-                TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory.getInstance("PKIX", "SunJSSE");
         trustManagerFactory.init(keystore);
         SSLContext sslContext = SSLContext.getInstance(protocol);
         sslContext.init(
@@ -27,5 +30,13 @@ public class SslContextFactory {
                 SecureRandom.getInstanceStrong());
 
         return sslContext;
+    }
+
+    private static KeyStore getTruststore(String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+        return KeyStore.getInstance(new File(location), password.toCharArray());
+    }
+
+    private static KeyStore getKeystore(String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+        return KeyStore.getInstance(new File(location), password.toCharArray());
     }
 }
