@@ -62,7 +62,6 @@ public class YakvsClient {
         }
     }
 
-
     public Response get(Entry entry) {
         var query = Query.newBuilder()
                 .setKeyword(Keyword.GET)

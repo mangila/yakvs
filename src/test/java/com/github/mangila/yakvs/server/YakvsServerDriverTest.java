@@ -1,8 +1,7 @@
 package com.github.mangila.yakvs.server;
 
 import com.github.mangila.proto.Entry;
-import com.github.mangila.yakvs.client.YakvsClient;
-import com.github.mangila.yakvs.client.YakvsSslClient;
+import com.github.mangila.yakvs.common.YakvsClient;
 import com.github.mangila.yakvs.common.ServerConfig;
 import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.AfterEach;
@@ -23,7 +22,10 @@ class YakvsServerDriverTest {
     @BeforeEach
     void setUp() throws Exception {
         this.driver = new YakvsServerDriver(SERVER_CONFIG, SslTestHelper.getServerSslContext());
-        this.yakvsClient = new YakvsSslClient("localhost", SERVER_CONFIG.getPort(), SslTestHelper.getClientSslContext());
+        this.yakvsClient = new YakvsClient("localhost",
+                SERVER_CONFIG.getPort(),
+                SslTestHelper.getClientSslContext());
+        driver.initialize();
     }
 
     @AfterEach
@@ -34,24 +36,10 @@ class YakvsServerDriverTest {
 
     @Test
     void setAndGet() {
-        driver.initialize();
         await().atMost(5, TimeUnit.SECONDS)
-                .until(() -> driver.getServer().getRunning());
+                .until(() -> driver.getServer().isRunning());
         yakvsClient.connect();
         var response = yakvsClient.set(Entry.newBuilder()
-                .setKey("MyKey")
-                .setValue(ByteString.copyFromUtf8("MyValue"))
-                .build());
-        assertThat(response.getValue().toStringUtf8()).isEqualTo("OK");
-        response = yakvsClient.get(Entry.newBuilder()
-                .setKey("MyKey")
-                .setValue(ByteString.EMPTY)
-                .build());
-        assertThat(response.getValue()
-                .toStringUtf8())
-                .isEqualTo("MyValue");
-
-         response = yakvsClient.set(Entry.newBuilder()
                 .setKey("MyKey")
                 .setValue(ByteString.copyFromUtf8("MyValue"))
                 .build());

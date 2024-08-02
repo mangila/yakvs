@@ -30,7 +30,9 @@ public class Engine {
             };
         } catch (Exception e) {
             log.error("ERR", e);
-            throw new StorageException(e.getMessage());
+            return Response.newBuilder()
+                    .setValue(ByteString.copyFromUtf8(e.getMessage()))
+                    .build();
         }
     }
 }
