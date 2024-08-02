@@ -4,30 +4,40 @@ import com.github.mangila.yakvs.common.ServerConfig;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.net.ssl.SSLContext;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Getter
-public class YakvsServerDriver {
+public class YakvsSslServerDriver {
 
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
-
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server.yml");
 
-    private YakvsPlainServer server;
+    static {
+        System.setProperty("javax.net.debug", "ssl");
+    }
 
-    public YakvsServerDriver(ServerConfig serverConfig) {
-        if (serverConfig.getPort() < 0) {
+    private YakvsServer server;
+
+    public YakvsSslServerDriver(ServerConfig serverConfig, SSLContext sslContext) throws Exception {
+        var port = serverConfig.getPort();
+        if (port < 0) {
             throw new IllegalArgumentException("Port cannot be less than 0");
         }
-        this.server = new YakvsPlainServer(serverConfig.getPort(), serverConfig.getName());
+        this.server = new YakvsServer(port, serverConfig.getName(), sslContext);
     }
 
     public static void main(String[] args) {
-        var driver = new YakvsServerDriver(SERVER_CONFIG);
-        driver.initialize();
+        try {
+            var sslContext = SslContextFactory.getInstance("TLS", "", "", "", "");
+            var driver = new YakvsSslServerDriver(SERVER_CONFIG, sslContext);
+            driver.initialize();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void initialize() {

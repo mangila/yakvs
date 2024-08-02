@@ -1,9 +1,6 @@
-package com.github.mangila.yakvs.server.ssl;
+package com.github.mangila.yakvs.server;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.BufferedInputStream;
+import javax.net.ssl.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,6 +8,10 @@ import java.security.*;
 import java.security.cert.CertificateException;
 
 public class SslContextFactory {
+
+    public static SSLContext getSystemDefault(String protocol) throws GeneralSecurityException, IOException {
+        return getInstance(protocol, null, null, null, null);
+    }
 
     public static SSLContext getInstance(String protocol,
                                          String keystoreLocation,
@@ -34,7 +35,16 @@ public class SslContextFactory {
         return sslContext;
     }
 
-    public static KeyStore getKeystore(String type, String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+    public static SSLContext getInstance(String protocol,
+                                         KeyManager[] keyManagers,
+                                         TrustManager[] trustManagers,
+                                         SecureRandom secureRandom) throws KeyManagementException, NoSuchAlgorithmException {
+        SSLContext sslContext = SSLContext.getInstance(protocol);
+        sslContext.init(keyManagers, trustManagers, secureRandom);
+        return sslContext;
+    }
+
+    private static KeyStore getKeystore(String type, String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
         var keystore = KeyStore.getInstance(type);
         keystore.load(new FileInputStream(location), password.toCharArray());
         return keystore;
