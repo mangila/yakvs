@@ -9,6 +9,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.security.SecureRandom;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,9 @@ public class YakvsDriver {
                 var keyStoreLocation = System.getProperty("javax.net.ssl.keyStore");
                 var keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
                 var keyStoreType = System.getProperty("javax.net.ssl.keyStoreType");
+                Objects.requireNonNull(keyStoreLocation);
+                Objects.requireNonNull(keyStorePassword);
+                Objects.requireNonNull(keyStoreType);
                 var ks = SslContextFactory.getKeystore(keyStoreType, new FileInputStream(keyStoreLocation), keyStorePassword);
                 var keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 keyManager.init(ks, keyStorePassword.toCharArray());
@@ -56,6 +60,9 @@ public class YakvsDriver {
                 var trustStoreLocation = System.getProperty("javax.net.ssl.trustStore");
                 var trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
                 var trustStoreType = System.getProperty("javax.net.ssl.trustStoreType");
+                Objects.requireNonNull(trustStoreLocation);
+                Objects.requireNonNull(trustStorePassword);
+                Objects.requireNonNull(trustStoreType);
                 var ts = SslContextFactory.getKeystore(trustStoreType, new FileInputStream(trustStoreLocation), trustStorePassword);
                 var trustManager = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 trustManager.init(ts);
