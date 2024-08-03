@@ -9,6 +9,9 @@ Key-Value store database server
 * Virtual Threads
 * Protocol buffers
 
+## Driver
+To start the server with the Driver code start the main method in YakvsDriver.
+
 ## server.yml
 
 * name = the name for the proto file saved on disk
