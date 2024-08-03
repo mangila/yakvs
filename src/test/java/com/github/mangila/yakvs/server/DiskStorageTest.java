@@ -69,5 +69,9 @@ public class DiskStorageTest {
         assertThat(response.getValue()
                 .toStringUtf8())
                 .isEqualTo("MyValue");
+        response = yakvsClient.flush();
+        assertThat(response.getValue()
+                .toStringUtf8())
+                .isEqualTo("OK");
     }
 }
