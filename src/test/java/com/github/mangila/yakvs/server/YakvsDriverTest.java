@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class YakvsServerDriverTest {
+class YakvsDriverTest {
 
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server-test.yml");
-    private static YakvsServerDriver driver;
+    private static YakvsDriver driver;
     private YakvsClient yakvsClient;
 
     @BeforeEach
@@ -37,7 +37,7 @@ class YakvsServerDriverTest {
 
     @BeforeAll
     static void beforeAll() {
-        driver = new YakvsServerDriver(SERVER_CONFIG, SslTestHelper.getServerSslContext());
+        driver = new YakvsDriver(SERVER_CONFIG, SslTestHelper.getServerSslContext());
         driver.initialize();
     }
 

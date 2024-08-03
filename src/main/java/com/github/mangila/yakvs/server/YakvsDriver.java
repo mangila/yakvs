@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class YakvsServerDriver {
+public class YakvsDriver {
 
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server.yml");
 
@@ -22,7 +22,7 @@ public class YakvsServerDriver {
     @Getter
     private final YakvsServer server;
 
-    public YakvsServerDriver(ServerConfig serverConfig, SSLContext sslContext) {
+    public YakvsDriver(ServerConfig serverConfig, SSLContext sslContext) {
         var port = serverConfig.getPort();
         if (port < 0) {
             throw new IllegalArgumentException("Port cannot be less than 0");
@@ -34,7 +34,7 @@ public class YakvsServerDriver {
     public static void main(String[] args) {
         try {
             var sslContext = SslContextFactory.getInstance("TLS", "", "", "", "");
-            var driver = new YakvsServerDriver(SERVER_CONFIG, sslContext);
+            var driver = new YakvsDriver(SERVER_CONFIG, sslContext);
             driver.initialize();
         } catch (Exception e) {
             throw new RuntimeException(e);
