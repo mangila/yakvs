@@ -8,7 +8,7 @@ Key-Value store database server
 * Protocol buffers
 
 ## server.yml
-* name = add the name for the proto file saved on disk
+* name = the name for the proto file saved on disk
 * port = specify bound port
 
 ## Keywords
@@ -21,6 +21,8 @@ Key-Value store database server
 * SAVE = Save to disk
 
 ## SSL-WIP
+Only supports TLS version 1.3
+
 Properties at Runtime.
 * `-Djavax.net.ssl.keyStore=$JDKPath$/lib/security/cacerts`
 * `-Djavax.net.ssl.keyStorePassword=changeit`

@@ -10,23 +10,24 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@Getter
 public class YakvsServerDriver {
 
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server.yml");
 
     static {
         System.setProperty("javax.net.debug", "ssl");
     }
 
-    private YakvsServer server;
+    private final ExecutorService executorService;
+    @Getter
+    private final YakvsServer server;
 
-    public YakvsServerDriver(ServerConfig serverConfig, SSLContext sslContext) throws Exception {
+    public YakvsServerDriver(ServerConfig serverConfig, SSLContext sslContext) {
         var port = serverConfig.getPort();
         if (port < 0) {
             throw new IllegalArgumentException("Port cannot be less than 0");
         }
+        this.executorService = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
         this.server = new YakvsServer(port, serverConfig.getName(), sslContext);
     }
 
@@ -41,18 +42,20 @@ public class YakvsServerDriver {
     }
 
     public void initialize() {
-        EXECUTOR_SERVICE.execute(server);
+        log.info("Initialize Driver");
+        executorService.execute(server);
     }
 
     public void close() {
         try {
+            log.info("Close Driver");
             server.stop();
-            EXECUTOR_SERVICE.shutdown();
-            while (!EXECUTOR_SERVICE.awaitTermination(5, TimeUnit.SECONDS)) {
-                EXECUTOR_SERVICE.shutdownNow();
+            executorService.shutdown();
+            while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
-            EXECUTOR_SERVICE.shutdownNow();
+            executorService.shutdownNow();
         }
     }
 }

@@ -53,6 +53,10 @@ public class YakvsClient {
         }
     }
 
+    public boolean isConnected() {
+        return !this.sslSocket.isClosed();
+    }
+
     public void disconnect() {
         try {
             this.sslSocket.close();

@@ -4,14 +4,12 @@ import com.github.mangila.proto.ProtoStorage;
 import com.github.mangila.proto.Query;
 import com.github.mangila.proto.Response;
 import com.google.common.io.Files;
-import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
 import lombok.Locked;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class Storage {
@@ -32,8 +30,10 @@ public class Storage {
             if (!java.nio.file.Files.exists(diskStorage)) {
                 java.nio.file.Files.createFile(diskStorage);
             }
+            var fromDisk = ProtoStorage.parseFrom(Files.toByteArray(diskStorage.toFile()));
+            log.info("Loaded {} entries from disk", fromDisk.getMapCount());
             return ProtoStorage.newBuilder()
-                    .mergeFrom(ProtoStorage.parseFrom(Files.toByteArray(diskStorage.toFile())))
+                    .mergeFrom(fromDisk)
                     .build();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -80,24 +80,16 @@ public class Storage {
     @Locked.Read
     public Response count() {
         var count = storage.getMapCount();
-        var bytes = Ints.toByteArray(count);
         return Response.newBuilder()
-                .setValue(ByteString.copyFrom(bytes))
+                .setValue(ByteString.copyFromUtf8(String.valueOf(count)))
                 .build();
     }
 
     @Locked.Read
     public Response keys() {
-        var proto = ProtoStorage.newBuilder()
-                .mergeFrom(storage)
-                .mergeFrom(loadFromDisk())
-                .build();
-        var keys = proto.getMapMap()
-                .keySet()
-                .stream()
-                .collect(Collectors.joining(System.lineSeparator()));
+        var keys = storage.getMapMap().keySet();
         return Response.newBuilder()
-                .setValue(ByteString.copyFromUtf8(keys))
+                .setValue(ByteString.copyFromUtf8(String.join(",", keys)))
                 .build();
     }
 

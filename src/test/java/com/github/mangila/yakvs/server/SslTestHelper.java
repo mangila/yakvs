@@ -16,7 +16,7 @@ public class SslTestHelper {
     private static final String PASSWORD = "test";
 
     /**
-     * Server certificate in Keystore and Client certificate in server Truststore
+     * Server certificate as Keystore and Client certificate in the Truststore
      */
     public static SSLContext getServerSslContext() {
         try (var serverStore = getResource(SERVER_STORE);
@@ -41,7 +41,7 @@ public class SslTestHelper {
     }
 
     /**
-     * Client certificate in Keystore and Server certificate in client Truststore
+     * Client certificate as Keystore and Server certificate in the Truststore
      */
     public static SSLContext getClientSslContext() {
         try (var serverStore = getResource(SERVER_STORE);
