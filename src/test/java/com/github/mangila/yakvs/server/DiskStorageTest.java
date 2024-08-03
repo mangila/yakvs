@@ -15,11 +15,11 @@ import static org.awaitility.Awaitility.await;
 public class DiskStorageTest {
 
     public static final ServerConfig SERVER_CONFIG = ServerConfig.load("server-test.yml");
-    private static YakvsServerDriver driver;
+    private static YakvsDriver driver;
     private YakvsClient yakvsClient;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         this.yakvsClient = new YakvsClient("localhost",
                 SERVER_CONFIG.getPort(),
                 SslTestHelper.getClientSslContext());
@@ -37,7 +37,7 @@ public class DiskStorageTest {
 
     @BeforeAll
     static void beforeAll() {
-        driver = new YakvsServerDriver(SERVER_CONFIG, SslTestHelper.getServerSslContext());
+        driver = new YakvsDriver(SERVER_CONFIG, SslTestHelper.getServerSslContext());
         driver.initialize();
     }
 

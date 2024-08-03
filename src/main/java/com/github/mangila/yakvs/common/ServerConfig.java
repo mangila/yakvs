@@ -12,6 +12,7 @@ public class ServerConfig {
 
     private String name;
     private int port;
+    private boolean quickstart;
 
     public static ServerConfig load(String yml) {
         try (var resources = ServerConfig.class.getClassLoader().getResourceAsStream(yml)) {

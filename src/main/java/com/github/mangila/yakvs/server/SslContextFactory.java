@@ -1,39 +1,19 @@
 package com.github.mangila.yakvs.server;
 
-import javax.net.ssl.*;
-import java.io.File;
-import java.io.FileInputStream;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 
 public class SslContextFactory {
 
-    public static SSLContext getSystemDefault(String protocol) throws GeneralSecurityException, IOException {
-        return getInstance(protocol, null, null, null, null);
-    }
-
-    public static SSLContext getInstance(String protocol,
-                                         String keystoreLocation,
-                                         String keystorePassword,
-                                         String truststoreLocation,
-                                         String truststorePassword)
-            throws GeneralSecurityException, IOException {
-        KeyStore keystore = KeyStore.getInstance(new File("file"), "password".toCharArray());
-        KeyManagerFactory keyManagerFactory =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keystore, "password".toCharArray());
-        TrustManagerFactory trustManagerFactory =
-                TrustManagerFactory.getInstance("PKIX", "SunJSSE");
-        trustManagerFactory.init(keystore);
-        SSLContext sslContext = SSLContext.getInstance(protocol);
-        sslContext.init(
-                keyManagerFactory.getKeyManagers(),
-                trustManagerFactory.getTrustManagers(),
-                SecureRandom.getInstanceStrong());
-
-        return sslContext;
-    }
+    private static final String QUICKSTART_STORE = "/quickstart-server-certificate.p12";
+    private static final String PKCS12 = "PKCS12";
+    private static final String QUICKSTART_PASSWORD = "quickstart";
 
     public static SSLContext getInstance(String protocol,
                                          KeyManager[] keyManagers,
@@ -44,9 +24,20 @@ public class SslContextFactory {
         return sslContext;
     }
 
-    private static KeyStore getKeystore(String type, String location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+    public static KeyStore getKeystore(String type, InputStream location, String password) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
         var keystore = KeyStore.getInstance(type);
-        keystore.load(new FileInputStream(location), password.toCharArray());
+        keystore.load(location, password.toCharArray());
         return keystore;
+    }
+
+    public static SSLContext getQuickstartContext() {
+        try (var quickstartStore = SslContextFactory.class.getResourceAsStream(QUICKSTART_STORE)) {
+            var keystore = getKeystore(PKCS12, quickstartStore, QUICKSTART_PASSWORD);
+            var keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManager.init(keystore, QUICKSTART_PASSWORD.toCharArray());
+            return getInstance("TLS", keyManager.getKeyManagers(), null, null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

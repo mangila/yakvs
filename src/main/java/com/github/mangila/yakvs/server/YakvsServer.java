@@ -20,6 +20,7 @@ public class YakvsServer implements Runnable {
 
     private final int port;
     private final String name;
+    private final boolean needClientAuth;
     private final Engine engine;
     private final SSLContext sslContext;
     private final SSLServerSocketFactory serverSocketFactory;
@@ -29,9 +30,11 @@ public class YakvsServer implements Runnable {
 
     public YakvsServer(int port,
                        String name,
+                       boolean needClientAuth,
                        SSLContext sslContext) {
         this.port = port;
         this.name = name.concat(".binpb");
+        this.needClientAuth = needClientAuth;
         this.engine = new Engine(new Storage(Paths.get(this.name)));
         this.sslContext = sslContext;
         this.serverSocketFactory = sslContext.getServerSocketFactory();
@@ -71,7 +74,11 @@ public class YakvsServer implements Runnable {
             var s = (SSLServerSocket) serverSocketFactory.createServerSocket(port);
             s.setSoTimeout((int) TimeUnit.SECONDS.toSeconds(2));
             s.setEnabledProtocols(new String[]{"TLSv1.3"});
-            s.setNeedClientAuth(true);
+            if (needClientAuth) {
+                s.setNeedClientAuth(true);
+            } else {
+                s.setWantClientAuth(true);
+            }
             return s;
         } catch (IOException e) {
             log.error("ERR", e);

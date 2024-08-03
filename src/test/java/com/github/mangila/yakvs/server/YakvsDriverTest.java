@@ -18,7 +18,7 @@ class YakvsDriverTest {
     private YakvsClient yakvsClient;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         this.yakvsClient = new YakvsClient("localhost",
                 SERVER_CONFIG.getPort(),
                 SslTestHelper.getClientSslContext());
